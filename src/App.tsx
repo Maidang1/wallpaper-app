@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dock, DockIcon } from "@/components/magicui/dock";
-import { HomeIcon, FolderOpen, History, Moon, Sun, Settings } from "lucide-react";
-import { AnimatedGridPattern } from './components/ui/animated-grid-pattern';
+import { HomeIcon, FolderOpen, Moon, Sun, Settings } from "lucide-react";
+import { AnimatedGridPattern } from './components/magicui/animated-grid-pattern';
 import { WallpaperProvider } from './contexts/WallpaperContext';
 import { PresetsView } from './components/features/PresetsView';
 import { LocalWallpaperView } from './components/features/LocalWallpaperView';
@@ -30,12 +30,9 @@ function ThemeToggle() {
   );
 }
 
-// Main app component wrapped with necessary providers
 function AppContent() {
-  // State to track current page/view
   const [currentView, setCurrentView] = useState<'presets' | 'local' | 'history' | 'settings'>('presets');
 
-  // Render content based on current view
   const renderContent = () => {
     switch (currentView) {
       case 'presets':
@@ -53,7 +50,6 @@ function AppContent() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
-      {/* Animated Grid Pattern Background */}
       <AnimatedGridPattern
         numSquares={30}
         maxOpacity={0.3}
@@ -63,16 +59,13 @@ function AppContent() {
       />
 
       <main className="relative z-10 flex h-full flex-col items-center justify-center">
-        {/* Theme Toggle Button */}
         <ThemeToggle />
 
-        {/* Content area */}
         <div className="w-full h-full overflow-auto py-16">
           {renderContent()}
         </div>
       </main>
 
-      {/* Dock Component */}
       <Dock className='fixed bottom-8 left-1/2 transform -translate-x-1/2 !bg-gray-500/20 dark:!bg-gray-800/30 !border-white/20 dark:!border-white/10 z-50'>
         <DockIcon onClick={() => setCurrentView('presets')} className={currentView === 'presets' ? 'bg-white/30 dark:bg-white/10' : ''}>
           <HomeIcon size={24} className="text-gray-800 dark:text-white" />
