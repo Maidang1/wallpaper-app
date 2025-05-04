@@ -1,15 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { open } from "@tauri-apps/plugin-dialog"
+import * as motion from "motion/react-client"
 
 import './App.css';
 
 function App() {
-
-  async function setWallpaper() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    await invoke('set_wallpapar_from_path');
-  }
-
   const handleSelectLocalImage = async () => {
 
     const file = await open({
@@ -22,16 +17,17 @@ function App() {
       ],
     });
     if (file) {
-      await invoke('set_wallpapar_from_path', { imagePath: file });    
+      await invoke('set_wallpapar_from_path', { imagePath: file });
 
     }
   }
 
   return (
-    <main className='container'>
-      <button onClick={setWallpaper}>set wallpaper</button>
-
-      <button onClick={handleSelectLocalImage}>选取本地图片</button>
+    <main>
+      <motion.button
+        whileHover={{ scale: 1.2 }}
+        whileTap={{ scale: 0.8 }}
+        onClick={handleSelectLocalImage}>选取本地图片</motion.button>
     </main>
   );
 }
