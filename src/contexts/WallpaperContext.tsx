@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 interface WallpaperContextType {
   wallpaperHistory: string[];
@@ -24,7 +25,7 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
         console.error('Failed to load wallpaper history:', error);
       }
     };
-    
+
     loadHistory();
   }, []);
 
@@ -37,9 +38,15 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
 
   // Handle setting wallpaper from any source
   const setWallpaper = async (imagePath: string) => {
+    console.log('Setting wallpaper:', imagePath);
     try {
-      await invoke('set_wallpapar_from_path', { imagePath });
-      saveToHistory(imagePath);
+      if (imagePath.startsWith('http') || imagePath.startsWith("https")) {
+        await invoke('set_wallpapar_from_url', { imageUrl: imagePath });
+        saveToHistory(imagePath);
+      } else {
+        await invoke('set_wallpapar_from_path', { imagePath });
+        saveToHistory(convertFileSrc(imagePath));
+      }
     } catch (error) {
       console.error('Failed to set wallpaper:', error);
     }

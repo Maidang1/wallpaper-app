@@ -52,14 +52,14 @@ export function LocalWallpaperView() {
     return (
       <div className="flex flex-col items-center justify-center p-4 w-full max-w-4xl mx-auto">
         <div className="relative w-full">
-          <h2 className="text-xl font-medium mb-4">预览壁纸</h2>
+          <h2 className="text-xl font-medium mb-4 text-gray-800 dark:text-white">预览壁纸</h2>
           
           {/* Preview image container */}
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4">
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden mb-4 border border-gray-100 dark:border-gray-700 shadow-sm">
             <img 
               src={previewImage} 
               alt="Wallpaper preview" 
-              className="w-full h-full object-contain bg-gray-800/30 backdrop-blur-sm"
+              className="w-full h-full object-contain bg-gray-100/30 dark:bg-gray-800/30 backdrop-blur-sm"
             />
           </div>
           
@@ -85,7 +85,7 @@ export function LocalWallpaperView() {
           </div>
 
           {/* File name indicator */}
-          <p className="text-center text-sm mt-4 opacity-70">
+          <p className="text-center text-sm mt-4 text-gray-600 dark:text-gray-400">
             {selectedImagePath?.split('/').pop()}
           </p>
         </div>
@@ -97,22 +97,24 @@ export function LocalWallpaperView() {
     <div className="flex flex-col items-center justify-center p-4 w-full max-w-2xl mx-auto">
       <motion.div 
         className={`w-full h-64 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer p-6 transition-colors ${
-          isDragging ? 'border-white/60 bg-white/10' : 'border-white/30'
-        } hover:border-white/60 hover:bg-white/5`}
+          isDragging 
+            ? 'border-gray-500 dark:border-white/60 bg-gray-100/30 dark:bg-white/10' 
+            : 'border-gray-300 dark:border-white/30 bg-gray-50/20 dark:bg-transparent'
+        } hover:border-gray-500 dark:hover:border-white/60 hover:bg-gray-100/30 dark:hover:bg-white/5`}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onMouseEnter={() => setIsDragging(true)}
         onMouseLeave={() => setIsDragging(false)}
         onClick={handleSelectLocalImage}
       >
-        <div className="bg-white/10 p-4 rounded-full mb-4">
-          <UploadIcon size={40} className="text-white/80" />
+        <div className="bg-gray-200/50 dark:bg-white/10 p-4 rounded-full mb-4">
+          <UploadIcon size={40} className="text-gray-600 dark:text-white/80" />
         </div>
-        <p className="text-white font-medium text-lg mb-2">选取本地图片</p>
-        <p className="text-white/70 text-sm text-center max-w-md">
+        <p className="text-gray-800 dark:text-white font-medium text-lg mb-2">选取本地图片</p>
+        <p className="text-gray-600 dark:text-white/70 text-sm text-center max-w-md">
           点击此区域选择您电脑中的图像文件作为壁纸
         </p>
-        <p className="text-white/50 text-xs mt-4">
+        <p className="text-gray-500 dark:text-white/50 text-xs mt-4">
           支持 PNG, JPG, JPEG, GIF 格式
         </p>
       </motion.div>

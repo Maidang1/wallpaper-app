@@ -15,13 +15,13 @@ export function PresetsView() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
-      <h2 className="text-xl font-medium text-white mb-4">精选壁纸</h2>
+      <h2 className="text-xl font-medium text-gray-800 dark:text-white mb-4">精选壁纸</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {presetWallpapers.map((url, index) => (
           <motion.div
             key={index}
             whileHover={{ scale: 1.05 }}
-            className="relative aspect-video overflow-hidden rounded-lg cursor-pointer"
+            className="relative aspect-video overflow-hidden rounded-lg cursor-pointer border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-800/20"
             onClick={() => setWallpaper(url)}
           >
             <img 
