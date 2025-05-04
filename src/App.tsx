@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Dock, DockIcon } from "@/components/magicui/dock";
-import { HomeIcon, FolderOpen, History, Moon, Sun } from "lucide-react";
+import { HomeIcon, FolderOpen, History, Moon, Sun, Settings } from "lucide-react";
 import { AnimatedGridPattern } from './components/ui/animated-grid-pattern';
 import { WallpaperProvider } from './contexts/WallpaperContext';
 import { PresetsView } from './components/features/PresetsView';
 import { LocalWallpaperView } from './components/features/LocalWallpaperView';
 import { HistoryView } from './components/features/HistoryView';
+import { SettingsView } from './components/features/SettingsView';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 import './App.css';
@@ -13,10 +14,10 @@ import './App.css';
 // Theme toggle button component
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
-  
+
   return (
-    <button 
-      onClick={toggleTheme} 
+    <button
+      onClick={toggleTheme}
       className="fixed top-5 right-5 p-2 rounded-full bg-gray-300/30 dark:bg-gray-700/30 hover:bg-gray-300/50 dark:hover:bg-gray-700/50 transition-colors z-50"
       aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
     >
@@ -32,7 +33,7 @@ function ThemeToggle() {
 // Main app component wrapped with necessary providers
 function AppContent() {
   // State to track current page/view
-  const [currentView, setCurrentView] = useState<'presets' | 'local' | 'history'>('presets');
+  const [currentView, setCurrentView] = useState<'presets' | 'local' | 'history' | 'settings'>('presets');
 
   // Render content based on current view
   const renderContent = () => {
@@ -43,6 +44,8 @@ function AppContent() {
         return <LocalWallpaperView />;
       case 'history':
         return <HistoryView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return <PresetsView />;
     }
@@ -62,7 +65,7 @@ function AppContent() {
       <main className="relative z-10 flex h-full flex-col items-center justify-center">
         {/* Theme Toggle Button */}
         <ThemeToggle />
-        
+
         {/* Content area */}
         <div className="w-full h-full overflow-auto py-16">
           {renderContent()}
@@ -72,13 +75,13 @@ function AppContent() {
       {/* Dock Component */}
       <Dock className='fixed bottom-8 left-1/2 transform -translate-x-1/2 !bg-gray-500/20 dark:!bg-gray-800/30 !border-white/20 dark:!border-white/10 z-50'>
         <DockIcon onClick={() => setCurrentView('presets')} className={currentView === 'presets' ? 'bg-white/30 dark:bg-white/10' : ''}>
-          <HomeIcon size={24} className="text-white" />
+          <HomeIcon size={24} className="text-gray-800 dark:text-white" />
         </DockIcon>
         <DockIcon onClick={() => setCurrentView('local')} className={currentView === 'local' ? 'bg-white/30 dark:bg-white/10' : ''}>
-          <FolderOpen size={24} className="text-white" />
+          <FolderOpen size={24} className="text-gray-800 dark:text-white" />
         </DockIcon>
-        <DockIcon onClick={() => setCurrentView('history')} className={currentView === 'history' ? 'bg-white/30 dark:bg-white/10' : ''}>
-          <History size={24} className="text-white" />
+        <DockIcon onClick={() => setCurrentView('settings')} className={currentView === 'settings' ? 'bg-white/30 dark:bg-white/10' : ''}>
+          <Settings size={24} className="text-gray-800 dark:text-white" />
         </DockIcon>
       </Dock>
     </div>

@@ -3338,10 +3338,12 @@ dependencies = [
  "system-configuration",
  "tokio",
  "tokio-native-tls",
+ "tokio-util",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-streams",
  "web-sys",
  "winreg 0.50.0",
 ]
@@ -4837,6 +4839,7 @@ name = "wallpaper-app"
 version = "0.1.0"
 dependencies = [
  "cocoa",
+ "reqwest 0.11.27",
  "serde",
  "serde_json",
  "tauri",

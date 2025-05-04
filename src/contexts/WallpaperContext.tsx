@@ -1,17 +1,23 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
+import { uniqBy } from "lodash-es"
+
+
+export interface CacheImageInfo {
+  originalPath: string;
+  assetsPath: string;
+}
 
 interface WallpaperContextType {
-  wallpaperHistory: string[];
+  wallpaperHistory: CacheImageInfo[];
   setWallpaper: (imagePath: string) => Promise<void>;
-  saveToHistory: (imagePath: string) => void;
+  saveToHistory: (imagePath: CacheImageInfo) => void;
 }
 
 const WallpaperContext = createContext<WallpaperContextType | undefined>(undefined);
 
 export function WallpaperProvider({ children }: { children: ReactNode }) {
-  const [wallpaperHistory, setWallpaperHistory] = useState<string[]>([]);
+  const [wallpaperHistory, setWallpaperHistory] = useState<CacheImageInfo[]>([]);
 
   // Load wallpaper history from storage when component mounts
   useEffect(() => {
@@ -30,23 +36,31 @@ export function WallpaperProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Save wallpaper to history
-  const saveToHistory = (imagePath: string) => {
-    const newHistory = [imagePath, ...wallpaperHistory.filter(path => path !== imagePath)].slice(0, 10); // Keep last 10
-    setWallpaperHistory(newHistory);
-    localStorage.setItem('wallpaper-history', JSON.stringify(newHistory));
+  const saveToHistory = (imagePath: CacheImageInfo) => {
+    setWallpaperHistory((prevHistory) => {
+      const updatedHistory = uniqBy([...prevHistory, imagePath], 'originalPath');
+      localStorage.setItem('wallpaper-history', JSON.stringify(updatedHistory));
+      return updatedHistory;
+    });
+
   };
 
   // Handle setting wallpaper from any source
   const setWallpaper = async (imagePath: string) => {
-    console.log('Setting wallpaper:', imagePath);
     try {
+      await invoke('set_wallpapar_from_path', { imagePath });
       if (imagePath.startsWith('http') || imagePath.startsWith("https")) {
-        await invoke('set_wallpapar_from_url', { imageUrl: imagePath });
-        saveToHistory(imagePath);
+        saveToHistory({
+          originalPath: imagePath,
+          assetsPath: imagePath
+        });
       } else {
-        await invoke('set_wallpapar_from_path', { imagePath });
-        saveToHistory(convertFileSrc(imagePath));
+        saveToHistory({
+          originalPath: imagePath,
+          assetsPath: convertFileSrc(imagePath)
+        });
       }
+
     } catch (error) {
       console.error('Failed to set wallpaper:', error);
     }

@@ -14,21 +14,13 @@ export function HistoryView() {
               key={index}
               whileHover={{ scale: 1.05 }}
               className="relative aspect-video overflow-hidden rounded-lg cursor-pointer border border-gray-200 dark:border-gray-700 shadow-sm dark:shadow-gray-800/20"
-              onClick={() => setWallpaper(path)}
+              onClick={() => setWallpaper(path.originalPath)}
             >
-              {path.startsWith('http') ? (
-                <img 
-                  src={`${path}?auto=format&fit=crop&w=400&h=225`} 
-                  alt={`History wallpaper ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full bg-gray-100 dark:bg-gray-800/40">
-                  <p className="text-gray-800 dark:text-white text-sm p-2 text-center truncate max-w-full">
-                    {path.split('/').pop()}
-                  </p>
-                </div>
-              )}
+              <img
+                src={`${path.assetsPath}?auto=format&fit=crop&w=400&h=225`}
+                alt={`History wallpaper ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
             </motion.div>
           ))}
         </div>

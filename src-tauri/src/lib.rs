@@ -1,7 +1,6 @@
-mod command;
+mod wallpaper;
+mod cache;
 
-use command::set_wallpapar_from_path;
-use command::set_wallpapar_from_url;
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -9,8 +8,8 @@ pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
-                .title("Transparent Titlebar Window")
-                .inner_size(800.0, 600.0);
+                .title("Wallpaper")
+                .inner_size(1200.0, 800.0);
 
             // 仅在 macOS 时设置透明标题栏
             #[cfg(target_os = "macos")]
@@ -41,8 +40,11 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![set_wallpapar_from_path])
-        .invoke_handler(tauri::generate_handler![set_wallpapar_from_url])
+        .invoke_handler(tauri::generate_handler![
+            wallpaper::set_wallpapar_from_path,
+            cache::clean_cache,
+            cache::get_cache_info,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
