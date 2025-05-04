@@ -25,6 +25,8 @@ tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 wallpaper = {version = "3.2.0", features = ["from_url", "dirs", "reqwest"] }
 reqwest = { version = "0.11", features = ["json", "stream"] }
+rand = "0.9.1"
+fastrand = "2.3.0"
 
 [target."cfg(target_os = \"macos\")".dependencies]
 cocoa = "0.25"

@@ -1,5 +1,6 @@
 mod wallpaper;
 mod cache;
+mod image;
 
 use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
@@ -44,6 +45,8 @@ pub fn run() {
             wallpaper::set_wallpapar_from_path,
             cache::clean_cache,
             cache::get_cache_info,
+            image::get_random_image_path,
+            image::remove_image_from_cache,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
