@@ -1,8 +1,8 @@
-mod wallpaper;
 mod cache;
 mod image;
+mod wallpaper;
 
-use tauri::{TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,16 +14,13 @@ pub fn run() {
 
             // 仅在 macOS 时设置透明标题栏
             #[cfg(target_os = "macos")]
-            let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
-
-            let window = win_builder.build().unwrap();
-
-            // 仅在构建 macOS 时设置背景颜色
-            #[cfg(target_os = "macos")]
             {
                 use cocoa::appkit::{NSColor, NSWindow};
                 use cocoa::base::{id, nil};
+                use tauri::TitleBarStyle;
+                let win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
 
+                let window = win_builder.build().unwrap();
                 let ns_window = window.ns_window().unwrap() as id;
                 unsafe {
                     let bg_color = NSColor::colorWithRed_green_blue_alpha_(
@@ -36,6 +33,7 @@ pub fn run() {
                     ns_window.setBackgroundColor_(bg_color);
                 }
             }
+
 
             Ok(())
         })
