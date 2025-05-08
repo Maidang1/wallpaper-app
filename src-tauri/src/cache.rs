@@ -22,7 +22,7 @@ pub async fn cache_file<R: Runtime>(
         .map_err(|e| format!("Failed to create cache directory: {}", e))?;
 
     // Generate a unique filename based on the original path
-    let filename = generate_unique_filename(&path);
+    let filename = generate_unique_filename();
     let cache_path = cache_dir.join(filename);
 
     // Check if the path is a URL or a file path
@@ -46,14 +46,8 @@ pub async fn cache_file<R: Runtime>(
 }
 
 // Generate a unique filename based on the original path
-fn generate_unique_filename(path: &str) -> String {
+fn generate_unique_filename() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
-
-    // Extract the original filename if possible
-    let original_filename = Path::new(path)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("file");
 
     // Add a timestamp to ensure uniqueness
     let timestamp = SystemTime::now()
@@ -61,7 +55,7 @@ fn generate_unique_filename(path: &str) -> String {
         .unwrap()
         .as_millis();
 
-    format!("{}_{}", timestamp, original_filename)
+    format!("{}_cache_image", timestamp)
 }
 
 // Clean cache directory by removing all cached wallpaper images
@@ -73,7 +67,7 @@ pub async fn clean_cache<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Result<
     let wallpaper_cache_dir = cache_dir.join("cached_wallpaper_images");
 
     // Check if the directory exists
-    if !wallpaper_cache_dir.exists() {
+    if (!wallpaper_cache_dir.exists()) {
         return Ok("Cache directory doesn't exist. Nothing to clean.".to_string());
     }
 
@@ -95,37 +89,59 @@ pub async fn clean_cache<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Result<
     }
 }
 
+#[tauri::command]
+
+pub fn remove_path(path: String) -> Result<String, String> {
+    let path = PathBuf::from(path);
+    if path.exists() {
+        fs::remove_file(path).map_err(|e| format!("Failed to remove file: {}", e))?;
+        Ok(format!("File removed successfully."))
+    } else {
+        Err(format!("File does not exist."))
+    }
+}
+
+#[derive(serde::Serialize)]
+pub struct FileInfo {
+    path: String,
+    size: u64,
+}
+
+impl FileInfo {
+    fn new(path: String, size: u64) -> Self {
+        FileInfo { path, size }
+    }
+}
+
 // Get cache size and stats
 #[tauri::command]
-pub fn get_cache_info<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Result<CacheInfo, String> {
+pub fn get_cache_info<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Vec<FileInfo> {
     // Get the app cache directory
     let cache_dir = app_handle.path().app_cache_dir().unwrap();
-
     let wallpaper_cache_dir = cache_dir.join("cached_wallpaper_images");
 
     // Check if the directory exists
     if !wallpaper_cache_dir.exists() {
-        return Ok(CacheInfo {
-            size_bytes: 0,
-            file_count: 0,
-        });
+        return vec![];
     }
 
-    // Count files
-    let mut file_count = 0;
+    let mut file_info_list = Vec::new();
+
+    // Read directory and collect file information
     if let Ok(entries) = fs::read_dir(&wallpaper_cache_dir) {
-        for _ in entries.flatten() {
-            file_count += 1;
+        for entry in entries.flatten() {
+            if let Ok(metadata) = entry.metadata() {
+                if metadata.is_file() {
+                    let file_path = entry.path();
+                    file_info_list.push(FileInfo::new(
+                        file_path.to_string_lossy().to_string(),
+                        metadata.len(), // Corrected the line to use metadata.len()
+                    ));
+                }
+            }
         }
     }
-
-    // Get total size
-    let size_bytes = get_directory_size(&wallpaper_cache_dir).unwrap_or(0);
-
-    Ok(CacheInfo {
-        size_bytes,
-        file_count,
-    })
+    file_info_list
 }
 
 // Helper function to get directory size in bytes

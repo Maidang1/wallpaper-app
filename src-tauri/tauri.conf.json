@@ -12,18 +12,23 @@
   "app": {
     "windows": [],
     "security": {
-      "csp": "default-src 'self' https://api.pexels.com ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost  https://images.pexels.com" ,
+      "csp": "default-src 'self' https://api.pexels.com ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost  https://images.pexels.com",
       "assetProtocol": {
         "enable": true,
-        "scope": []
+        "scope": ["$CACHE/cached_wallpaper_images/*"]
       }
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": [
-      "icons/64x64.png"
-    ]
+    "icon": ["icons/64x64.png"]
+  },
+  "plugins": {
+    "fs": {
+      "scope": {
+        "allow": ["$CACHE/cached_wallpaper_images/*"]
+      }
+    }
   }
 }

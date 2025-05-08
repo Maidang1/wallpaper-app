@@ -3,15 +3,17 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Trash2, RefreshCw, AlertCircle } from 'lucide-react';
 import { confirm } from "@tauri-apps/plugin-dialog"
+import { convertFileSrc } from "@tauri-apps/api/core"
 
 // Interface for cache information
-interface CacheInfo {
-  size_bytes: number;
-  file_count: number;
+interface FileInfo {
+  path: string;
+  size: number;
 }
 
+
 export function SettingsView() {
-  const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
+  const [cacheInfo, setCacheInfo] = useState<FileInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -29,7 +31,7 @@ export function SettingsView() {
   // Load cache information
   const loadCacheInfo = async () => {
     try {
-      const info = await invoke<CacheInfo>('get_cache_info');
+      const info = await invoke<FileInfo[]>('get_cache_info');
       setCacheInfo(info);
     } catch (error) {
       setMessage({
@@ -38,6 +40,9 @@ export function SettingsView() {
       });
     }
   };
+
+
+  console.log('cacheInfo', cacheInfo);
 
   // Clean cache
   const handleCleanCache = async () => {
@@ -87,18 +92,50 @@ export function SettingsView() {
         <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-md">
           <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">缓存信息</h4>
 
-          {cacheInfo ? (
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">文件数量:</span> {cacheInfo.file_count} 个文件
-              </p>
-              <p className="text-sm">
-                <span className="font-medium">占用空间:</span> {formatBytes(cacheInfo.size_bytes)}
-              </p>
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              共 {cacheInfo.length} 个缓存文件
             </div>
-          ) : (
-            <p className="text-sm text-gray-500">正在加载缓存信息...</p>
-          )}
+            {cacheInfo.length > 0 ? (
+              <div className="space-y-2">
+                {cacheInfo.map((file) => (
+                  <div key={file.path} className="flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <img
+                        src={convertFileSrc(file.path)}
+                        alt="preview"
+                        className="w-10 h-10 object-cover rounded mr-3"
+                        onError={(e) => (e.currentTarget.src = 'fallback-image.png')}
+                      />
+                      <span className="text-sm truncate flex-1 max-w-fill overflow-hidden text-ellipsis min-w-0">{file.path}</span>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatBytes(file.size)}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          if (await confirm('确定要删除这个缓存文件吗？')) {
+                            try {
+                              await invoke('remove_path', { path: file.path });
+                              loadCacheInfo();
+                            } catch (error) {
+                              setMessage({ text: `删除失败: ${error}`, type: 'error' });
+                            }
+                          }
+                        }}
+                        className="p-1 hover:text-red-500 dark:hover:text-red-400"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">没有缓存文件</p>
+            )}
+          </div>
         </div>
 
         {/* Clean Cache Button */}
@@ -106,9 +143,9 @@ export function SettingsView() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCleanCache}
-          disabled={isLoading || (!!cacheInfo && cacheInfo.file_count === 0)}
+          disabled={isLoading || (!!cacheInfo && cacheInfo.length === 0)}
           className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-            ${isLoading || (cacheInfo && cacheInfo.file_count === 0)
+            ${isLoading || (cacheInfo && cacheInfo.length === 0)
               ? 'bg-gray-400 cursor-not-allowed'
               : 'bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500'}`}
         >

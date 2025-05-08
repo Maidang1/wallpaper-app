@@ -43,6 +43,7 @@ pub fn run() {
             wallpaper::set_wallpapar_from_path,
             cache::clean_cache,
             cache::get_cache_info,
+            cache::remove_path,
             image::get_random_image_path,
             image::remove_image_from_cache,
         ])
