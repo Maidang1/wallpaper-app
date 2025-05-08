@@ -12,7 +12,7 @@
   "app": {
     "windows": [],
     "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost",
+      "csp": "default-src 'self' https://api.pexels.com ipc: http://ipc.localhost; img-src 'self' asset: http://asset.localhost  https://images.pexels.com" ,
       "assetProtocol": {
         "enable": true,
         "scope": []
