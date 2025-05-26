@@ -1,55 +1,65 @@
+use anyhow::{Context, Result};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use tauri::Manager;
 use tauri::Runtime;
+use thiserror::Error;
+use regress::Regex;
+
+#[derive(Error, Debug)]
+pub enum CacheError {
+    #[error("I/O error: {0}")]
+    Io(#[from] io::Error),
+
+    #[error("HTTP request failed: {0}")]
+    HttpRequest(#[from] reqwest::Error),
+
+    #[error("Source file does not exist: {0}")]
+    SourceFileNotFound(String),
+
+    #[error("Cache directory error: {0}")]
+    CacheDirError(String),
+
+    #[error("File operation failed: {0}")]
+    FileOperation(String),
+}
 
 pub async fn cache_file<R: Runtime>(
     path: String,
     app_handle: tauri::AppHandle<R>,
-) -> Result<String, String> {
-    // Get the app cache directory
+) -> Result<String, CacheError> {
+    let re = Regex::new(r"^https?://").unwrap();
     let cache_dir = app_handle
         .path()
         .app_cache_dir()
-        .unwrap() // Changed from unwrap_err() to unwrap() to get the cache directory correctly
-    ;
+        .map_err(|e| CacheError::CacheDirError(e.to_string()))?;
 
     let cache_dir = cache_dir.join("cached_wallpaper_images");
 
-    // Create the cache directory if it doesn't exist
-    fs::create_dir_all(&cache_dir)
-        .map_err(|e| format!("Failed to create cache directory: {}", e))?;
+    let _ = fs::create_dir_all(&cache_dir).context("Failed to create cache directory");
 
-    // Generate a unique filename based on the original path
     let filename = generate_unique_filename();
     let cache_path = cache_dir.join(filename);
 
-    // Check if the path is a URL or a file path
-    if path.starts_with("http://") || path.starts_with("https://") {
-        // It's a URL, download it
-        download_file(&path, &cache_path)
-            .await
-            .map_err(|e| format!("Failed to download file: {}", e))?;
+    if re.find(&path).is_some() {
+        download_file(&path, &cache_path).await?
     } else {
-        // It's a file path, copy it
         let source_path = PathBuf::from(&path);
         if !source_path.exists() {
-            return Err(format!("Source file does not exist: {}", path));
+            return Err(CacheError::SourceFileNotFound(path).into());
         }
 
-        fs::copy(&source_path, &cache_path).map_err(|e| format!("Failed to copy file: {}", e))?;
+        fs::copy(&source_path, &cache_path)
+            .map_err(|e| CacheError::FileOperation(e.to_string()))?;
     }
 
-    // Return the path to the cached file
     Ok(cache_path.to_string_lossy().to_string())
 }
 
-// Generate a unique filename based on the original path
 fn generate_unique_filename() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    // Add a timestamp to ensure uniqueness
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -58,26 +68,20 @@ fn generate_unique_filename() -> String {
     format!("{}_cache_image", timestamp)
 }
 
-// Clean cache directory by removing all cached wallpaper images
 #[tauri::command]
 pub async fn clean_cache<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Result<String, String> {
-    // Get the app cache directory
     let cache_dir = app_handle.path().app_cache_dir().unwrap();
 
     let wallpaper_cache_dir = cache_dir.join("cached_wallpaper_images");
 
-    // Check if the directory exists
-    if (!wallpaper_cache_dir.exists()) {
+    if !wallpaper_cache_dir.exists() {
         return Ok("Cache directory doesn't exist. Nothing to clean.".to_string());
     }
 
-    // Get cache size before cleaning
     let cache_size = get_directory_size(&wallpaper_cache_dir).unwrap_or(0);
 
-    // Remove all files in the cache directory
     match fs::remove_dir_all(&wallpaper_cache_dir) {
         Ok(_) => {
-            // Recreate the empty directory
             fs::create_dir_all(&wallpaper_cache_dir)
                 .map_err(|e| format!("Failed to recreate cache directory: {}", e))?;
             Ok(format!(
@@ -113,21 +117,17 @@ impl FileInfo {
     }
 }
 
-// Get cache size and stats
 #[tauri::command]
 pub fn get_cache_info<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Vec<FileInfo> {
-    // Get the app cache directory
     let cache_dir = app_handle.path().app_cache_dir().unwrap();
     let wallpaper_cache_dir = cache_dir.join("cached_wallpaper_images");
 
-    // Check if the directory exists
     if !wallpaper_cache_dir.exists() {
         return vec![];
     }
 
     let mut file_info_list = Vec::new();
 
-    // Read directory and collect file information
     if let Ok(entries) = fs::read_dir(&wallpaper_cache_dir) {
         for entry in entries.flatten() {
             if let Ok(metadata) = entry.metadata() {
@@ -135,7 +135,7 @@ pub fn get_cache_info<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Vec<FileIn
                     let file_path = entry.path();
                     file_info_list.push(FileInfo::new(
                         file_path.to_string_lossy().to_string(),
-                        metadata.len(), // Corrected the line to use metadata.len()
+                        metadata.len(),
                     ));
                 }
             }
@@ -144,7 +144,6 @@ pub fn get_cache_info<R: Runtime>(app_handle: tauri::AppHandle<R>) -> Vec<FileIn
     file_info_list
 }
 
-// Helper function to get directory size in bytes
 fn get_directory_size(path: &Path) -> io::Result<u64> {
     let mut total_size = 0;
 
@@ -164,26 +163,21 @@ fn get_directory_size(path: &Path) -> io::Result<u64> {
     Ok(total_size)
 }
 
-// Structure to return cache information
 #[derive(serde::Serialize)]
 pub struct CacheInfo {
     size_bytes: u64,
     file_count: u32,
 }
 
-// Download a file from a URL
 async fn download_file(url: &str, destination: &Path) -> Result<(), io::Error> {
-    // Create a reqwest client
     let client = reqwest::Client::new();
 
-    // Perform the request
     let response = client
         .get(url)
         .send()
         .await
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-    // Check if the request was successful
     if !response.status().is_success() {
         return Err(io::Error::new(
             io::ErrorKind::Other,
@@ -191,13 +185,11 @@ async fn download_file(url: &str, destination: &Path) -> Result<(), io::Error> {
         ));
     }
 
-    // Get the response bytes
     let bytes = response
         .bytes()
         .await
         .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
 
-    // Write the bytes to a file
     fs::write(destination, bytes)?;
 
     Ok(())
